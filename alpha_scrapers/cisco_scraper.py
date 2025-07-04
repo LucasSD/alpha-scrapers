@@ -40,7 +40,6 @@ class CiscoScraper:
             urljoin(self.BASE_URL, a["href"])
             for a in soup.select("table.table_basic-1 a[href*='/jobs/ProjectDetail/']")
         }
-        # breakpoint()
         return list(links)
 
     def parse_field(self, soup: BeautifulSoup, label: str) -> str:
