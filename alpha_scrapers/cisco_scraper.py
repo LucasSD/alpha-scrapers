@@ -1,7 +1,7 @@
 from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 
 class CiscoScraper:
@@ -50,11 +50,49 @@ class CiscoScraper:
             soup_list.append(soup)
         return soup_list
 
+    def parse_field(self, soup: BeautifulSoup, label: str) -> str:
+        """
+        Helper to find a <div> with exact text == label,
+        then return text of its sibling <div class='fields-data_value'>.
+        """
+        try:
+            label_div = soup.find(
+                lambda tag: isinstance(tag, Tag)
+                and tag.name == "div"
+                and tag.get_text(strip=True) == label
+            )
+            if label_div:
+                value_div = label_div.find_next_sibling(
+                    "div", class_="fields-data_value"
+                )
+                if value_div:
+                    return value_div.get_text(strip=True)
+        except Exception:
+            pass
+        return ""
+
+    def parse_job_title(self, soup: BeautifulSoup) -> str:
+        """
+        Extract the job title.
+        """
+        tag = soup.find("h2", class_="title_page-1")
+        if tag and tag.get_text(strip=True):
+            return tag.get_text(strip=True)
+        return ""
+
     def run(self):
         soup = self.fetch_listings_page()
         job_links = self.get_job_links(soup)
-        job_pages = self.fetch_job_pages(job_links)
-        # breakpoint()
+        for url in job_links:
+            job_soup = self.fetch_page(url)
+            job_id = self.parse_field(job_soup, "Job Id")
+            title = self.parse_job_title(job_soup)
+            location = self.parse_field(job_soup, "Location:") or self.parse_field(
+                soup, "Location"
+            )
+            job_type = self.parse_field(job_soup, "Job Type")
+            # breakpoint()
+
         return
 
 
