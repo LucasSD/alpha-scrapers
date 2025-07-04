@@ -78,4 +78,4 @@ venv/
 output/
 outputs/
 *.json
-!example*.json 
+!example*.json
