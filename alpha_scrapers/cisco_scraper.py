@@ -38,7 +38,7 @@ class CiscoScraper:
         }
         # breakpoint()
         return list(links)
-    
+
     def fetch_job_pages(self, links: list[str]) -> list[BeautifulSoup]:
         """
         Fetch and parse each job URL.
@@ -55,7 +55,7 @@ class CiscoScraper:
         job_links = self.get_job_links(soup)
         job_pages = self.fetch_job_pages(job_links)
         # breakpoint()
-        return 
+        return
 
 
 if __name__ == "__main__":
