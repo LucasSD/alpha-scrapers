@@ -82,7 +82,8 @@ class CiscoScraper:
                 "url": url,
                 "job_id": self.parse_field(job_soup, "Job Id"),
                 "title": self.parse_job_title(job_soup),
-                "location": self.parse_field(job_soup, "Location:") or self.parse_field(soup, "Location"),
+                "location": self.parse_field(job_soup, "Location:")
+                or self.parse_field(soup, "Location"),
                 "type": self.parse_field(job_soup, "Job Type"),
                 "scraped_at": ts,
             }
