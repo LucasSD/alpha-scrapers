@@ -14,14 +14,19 @@ class CiscoScraper:
     def __init__(self):
         self.session = requests.Session()
 
+    def fetch_page(self, url: str, params: dict = None) -> BeautifulSoup:
+        """
+        Fetch any URL and return a BeautifulSoup object for parsing.
+        """
+        response = self.session.get(url, params=params)
+        response.raise_for_status()
+        return BeautifulSoup(response.text, "html.parser")
+
     def fetch_listings_page(self, params: dict = None) -> BeautifulSoup:
         """
-        GET the Cisco SearchJobs page and return a BeautifulSoup object.
+        Fetch and parse the main listings page.
         """
-        response = self.session.get(self.BASE_URL, params=params)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
-        return soup
+        return self.fetch_page(self.BASE_URL, params)
 
     def get_job_links(self, soup: BeautifulSoup) -> list[str]:
         """
@@ -33,11 +38,24 @@ class CiscoScraper:
         }
         # breakpoint()
         return list(links)
+    
+    def fetch_job_pages(self, links: list[str]) -> list[BeautifulSoup]:
+        """
+        Fetch and parse each job URL.
+        """
+        soup_list = []
+        # TODO: remove restriction below
+        for url in links[:2]:
+            soup = self.fetch_page(url)
+            soup_list.append(soup)
+        return soup_list
 
     def run(self):
         soup = self.fetch_listings_page()
         job_links = self.get_job_links(soup)
-        return job_links
+        job_pages = self.fetch_job_pages(job_links)
+        # breakpoint()
+        return 
 
 
 if __name__ == "__main__":
