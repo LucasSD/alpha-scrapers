@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup, Tag
+
+from alpha_scrapers.exporters import dump_to_json
 
 
 class CiscoScraper:
@@ -75,6 +78,7 @@ class CiscoScraper:
         job_links = self.get_job_links(soup)
         results = []
         ts = datetime.now(timezone.utc).isoformat()  # timestamp per job
+        # TODO: remove limit below
         for url in job_links[:2]:
             job_soup = self.fetch_page(url)
 
@@ -88,11 +92,25 @@ class CiscoScraper:
                 "scraped_at": ts,
             }
             results.append(record)
-            # breakpoint()
 
-        return
+        return results
 
 
 if __name__ == "__main__":
     scraper = CiscoScraper()
-    scraper.run()
+    data = scraper.run()
+
+    now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    project_root = Path(__file__).parent.parent
+
+    # Archive folder: data/archive/20250704T153000Z.json
+    archive_path = project_root / "data" / "archive" / f"{now}.json"
+    # Latest overwrite
+    latest_path = project_root / "data" / "latest.json"
+
+    dump_to_json(data, str(archive_path))
+    dump_to_json(data, str(latest_path))
+
+    print(f"✅ Wrote {len(data)} records to:")
+    print(f"   • Archive: {archive_path}")
+    print(f"   • Latest:  {latest_path}")
