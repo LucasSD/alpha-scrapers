@@ -99,6 +99,12 @@ if __name__ == "__main__":
     scraper = CiscoScraper()
     data = scraper.run()
 
+    from alpha_scrapers.db import SqlitePersister
+
+    db_path = Path(__file__).parent.parent / "data" / "cisco_jobs.db"
+    persister = SqlitePersister(str(db_path))
+    persister.save_jobs(data)
+
     now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     project_root = Path(__file__).parent.parent
 
@@ -110,6 +116,7 @@ if __name__ == "__main__":
     dump_to_json(data, str(archive_path))
     dump_to_json(data, str(latest_path))
 
-    print(f"✅ Wrote {len(data)} records to:")
-    print(f"   • Archive: {archive_path}")
-    print(f"   • Latest:  {latest_path}")
+    print(f"✅ Wrote {len(data)} records to DB and JSON:")
+    print(f"   • SQLite DB: {db_path}")
+    print(f"   • Archive:   {archive_path}")
+    print(f"   • Latest:    {latest_path}")
