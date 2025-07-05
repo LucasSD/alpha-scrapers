@@ -17,6 +17,10 @@ logging.basicConfig(
 )
 
 
+class LinkExtractionError(Exception):
+    pass
+
+
 class CiscoScraper:
     """
     Basic scraper for the Cisco job search page.
@@ -58,9 +62,14 @@ class CiscoScraper:
         Get the job links from the listings page.
         """
         links = {
+            #  ensure relative URLs are handled
             urljoin(self.BASE_URL, a["href"])
             for a in soup.select("table.table_basic-1 a[href*='/jobs/ProjectDetail/']")
         }
+        if not links:
+            raise LinkExtractionError(
+                "No job links found on listings page – selector may be broken"
+            )
         return list(links)
 
     def parse_field(self, soup: BeautifulSoup, label: str) -> str:

@@ -1,7 +1,7 @@
 import pytest
 from bs4 import BeautifulSoup
 
-from alpha_scrapers.cisco_scraper import CiscoScraper
+from alpha_scrapers.cisco_scraper import CiscoScraper, LinkExtractionError
 
 
 @pytest.fixture(scope="module")
@@ -116,7 +116,8 @@ def test_get_job_links_dedup_and_filter(scraper):
 def test_get_job_links_empty(scraper):
     html = '<table class="table_basic-1"><a href="/jobs/Other/1">Other</a></table>'
     soup = BeautifulSoup(html, "html.parser")
-    assert scraper.get_job_links(soup) == []
+    with pytest.raises(LinkExtractionError):
+        scraper.get_job_links(soup)
 
 
 def test_fetch_listings_page_delegates(scraper, monkeypatch):
