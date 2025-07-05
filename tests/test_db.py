@@ -1,9 +1,3 @@
-# tests/test_db.py
-
-import sqlite3
-
-import pytest
-
 from alpha_scrapers.db import SqlitePersister
 
 

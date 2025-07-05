@@ -1,6 +1,7 @@
 import pytest
 from bs4 import BeautifulSoup
 
+import alpha_scrapers.cisco_scraper as mod
 from alpha_scrapers.cisco_scraper import CiscoScraper, LinkExtractionError
 
 
@@ -170,3 +171,92 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
     # Ensure returned object is parsed HTML
     span = soup.find("span")
     assert span is not None and span.text == "TestContent"
+
+
+################################################################################
+#                            INTEGRATION TEST: run()
+################################################################################
+
+
+FIXED_TS = "2025-07-06T12:00:00+00:00"
+
+
+class DummyDateTime:
+    @classmethod
+    def now(cls, tz=None):
+        return cls()
+
+    def isoformat(self):
+        return FIXED_TS
+
+
+@pytest.fixture(autouse=True)
+def freeze_datetime(monkeypatch):
+    monkeypatch.setattr(mod, "datetime", DummyDateTime)
+
+
+def make_job_soup(job_id, title, location, job_type):
+    html = f"""
+    <html><body>
+      <h2 class="title_page-1">{title}</h2>
+      <div>Job Id</div><div class="fields-data_value">{job_id}</div>
+      <div>Location:</div><div class="fields-data_value">{location}</div>
+      <div>Job Type</div><div class="fields-data_value">{job_type}</div>
+    </body></html>
+    """
+    return BeautifulSoup(html, "html.parser")
+
+
+def test_run_produces_expected_records(monkeypatch, scraper):
+    # listings page with two links
+    html_list = """
+    <table class="table_basic-1">
+      <a href="/jobs/ProjectDetail/A/1">A</a>
+      <a href="/jobs/ProjectDetail/B/2">B</a>
+    </table>
+    """
+    monkeypatch.setattr(
+        scraper,
+        "fetch_listings_page",
+        lambda params=None: BeautifulSoup(html_list, "html.parser"),
+    )
+
+    # per-URL job pages
+    job_soups = {
+        "https://jobs.cisco.com/jobs/ProjectDetail/A/1": make_job_soup(
+            "A1", "Title A", "Loc A", "Type A"
+        ),
+        "https://jobs.cisco.com/jobs/ProjectDetail/B/2": make_job_soup(
+            "B2", "Title B", "Loc B", "Type B"
+        ),
+    }
+
+    def fake_fetch_page(url, params=None):
+        return job_soups[url]
+
+    monkeypatch.setattr(scraper, "fetch_page", fake_fetch_page)
+
+    # run and assert
+    results = scraper.run()
+    expected = [
+        {
+            "url": "https://jobs.cisco.com/jobs/ProjectDetail/A/1",
+            "job_id": "A1",
+            "title": "Title A",
+            "location": "Loc A",
+            "type": "Type A",
+            "scraped_at": FIXED_TS,
+        },
+        {
+            "url": "https://jobs.cisco.com/jobs/ProjectDetail/B/2",
+            "job_id": "B2",
+            "title": "Title B",
+            "location": "Loc B",
+            "type": "Type B",
+            "scraped_at": FIXED_TS,
+        },
+    ]
+
+    results_sorted = sorted(results, key=lambda r: r["url"])
+    expected_sorted = sorted(expected, key=lambda r: r["url"])
+    assert results_sorted == expected_sorted
