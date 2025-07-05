@@ -142,8 +142,9 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
     calls = {}
 
     class DummyResponse:
-        def __init__(self, text):
+        def __init__(self, text, status_code=200):
             self.text = text
+            self.status_code = status_code
 
         def raise_for_status(self):
             calls["raised"] = True

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin
@@ -6,6 +7,12 @@ import requests
 from bs4 import BeautifulSoup, Tag
 
 from alpha_scrapers.exporters import dump_to_json
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 
 class CiscoScraper:
@@ -23,6 +30,7 @@ class CiscoScraper:
         Fetch any URL and return a BeautifulSoup object for parsing.
         """
         response = self.session.get(url, params=params)
+        logging.info(f"GET {url} → {response.status_code}")
         response.raise_for_status()
         return BeautifulSoup(response.text, "html.parser")
 
