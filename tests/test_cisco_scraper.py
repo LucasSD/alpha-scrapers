@@ -44,3 +44,76 @@ def scraper():
 def test_parse_job_title(html, expected, scraper):
     soup = BeautifulSoup(html, "html.parser")
     assert scraper.parse_job_title(soup) == expected
+
+
+@pytest.mark.parametrize(
+    "html,label,expected",
+    [
+        # Basic field extraction
+        (
+            "<div>Job Id</div><div class='fields-data_value'>123</div>",
+            "Job Id",
+            "123",
+        ),
+        # Whitespace is trimmed
+        (
+            "<div>Job Id</div><div class='fields-data_value'>  ABC  </div>",
+            "Job Id",
+            "ABC",
+        ),
+        # Missing class on value div
+        (
+            "<div>Job Id</div><div>no class</div>",
+            "Job Id",
+            "",
+        ),
+        # Label not present
+        (
+            "<div>No Label</div><div class='fields-data_value'>XYZ</div>",
+            "Job Id",
+            "",
+        ),
+        # Multiple label/value pairs: return first
+        (
+            "<div>Job Id</div><div class='fields-data_value'>First</div>"
+            "<div>Job Id</div><div class='fields-data_value'>Second</div>",
+            "Job Id",
+            "First",
+        ),
+    ],
+    ids=[
+        "basic",
+        "whitespace",
+        "no_value_class",
+        "no_label",
+        "multiple",
+    ],
+)
+def test_parse_field(html, label, expected, scraper):
+    soup = BeautifulSoup(html, "html.parser")
+    assert scraper.parse_field(soup, label) == expected
+
+
+def test_get_job_links_dedup_and_filter(scraper):
+    html = """
+    <table class="table_basic-1">
+      <a href="/jobs/ProjectDetail/JobA/1">Job A</a>
+      <a href="/jobs/ProjectDetail/JobB/2">Job B</a>
+      <a href="/jobs/ProjectDetail/JobA/1">Job A dup</a>
+      <a href="/jobs/OtherPage/3">Other</a>
+    </table>
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    links = scraper.get_job_links(soup)
+    expected = {
+        "https://jobs.cisco.com/jobs/ProjectDetail/JobA/1",
+        "https://jobs.cisco.com/jobs/ProjectDetail/JobB/2",
+    }
+    assert set(links) == expected
+    assert len(links) == 2  # duplicates removed
+
+
+def test_get_job_links_empty(scraper):
+    html = '<table class="table_basic-1"><a href="/jobs/Other/1">Other</a></table>'
+    soup = BeautifulSoup(html, "html.parser")
+    assert scraper.get_job_links(soup) == []
