@@ -15,3 +15,6 @@ class SqlitePersister:
         Create the jobs table if it doesn't exist.
         """
         return
+
+    def save_jobs(self, records):
+        return
