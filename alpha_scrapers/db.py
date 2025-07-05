@@ -31,4 +31,32 @@ class SqlitePersister:
         self.conn.commit()
 
     def save_jobs(self, records):
-        return
+        """
+        Insert new jobs or update existing ones based on job_id.
+        first_seen is set on insert; last_seen always updated.
+        """
+        cur = self.conn.cursor()
+        for rec in records:
+            ts = rec.get("scraped_at")
+            cur.execute(
+                """
+            INSERT INTO jobs (job_id, title, location, type, url, first_seen, last_seen)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(job_id) DO UPDATE SET
+                title = excluded.title,
+                location = excluded.location,
+                type = excluded.type,
+                url = excluded.url,
+                last_seen = excluded.last_seen
+            """,
+                (
+                    rec.get("job_id"),
+                    rec.get("title"),
+                    rec.get("location"),
+                    rec.get("type"),
+                    rec.get("url"),
+                    ts,
+                    ts,
+                ),
+            )
+        self.conn.commit()
