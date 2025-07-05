@@ -121,6 +121,15 @@ class CiscoScraper:
                     "type": self.parse_field(job_soup, "Job Type"),
                     "scraped_at": ts,
                 }
+
+                # optional logging
+                missing = [
+                    k for k, v in record.items() if v == "" and k != "scraped_at"
+                ]
+                if missing:
+                    logging.warning(
+                        f"Missing {missing} for {record['url']} — selectors may need updating"
+                    )
                 results.append(record)
             except Exception as e:
                 logging.error(f"✖ Failed to fetch {url}: {e}")
