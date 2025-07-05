@@ -117,3 +117,54 @@ def test_get_job_links_empty(scraper):
     html = '<table class="table_basic-1"><a href="/jobs/Other/1">Other</a></table>'
     soup = BeautifulSoup(html, "html.parser")
     assert scraper.get_job_links(soup) == []
+
+
+def test_fetch_listings_page_delegates(scraper, monkeypatch):
+    dummy_soup = BeautifulSoup("<html></html>", "html.parser")
+    called = {}
+
+    def fake_fetch_page(url, params=None):
+        called["url"] = url
+        called["params"] = params
+        return dummy_soup
+
+    monkeypatch.setattr(scraper, "fetch_page", fake_fetch_page)
+    params = {"foo": "bar"}
+    result = scraper.fetch_listings_page(params)
+
+    assert result is dummy_soup
+    assert called["url"] == CiscoScraper.BASE_URL
+    assert called["params"] == params
+
+
+def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
+    html = "<div><span>TestContent</span></div>"
+    calls = {}
+
+    class DummyResponse:
+        def __init__(self, text):
+            self.text = text
+
+        def raise_for_status(self):
+            calls["raised"] = True
+
+    def fake_get(url, params=None):
+        calls["url"] = url
+        calls["params"] = params
+        return DummyResponse(html)
+
+    # Patch the session.get method
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    test_url = "http://example.com"
+    test_params = {"a": "1"}
+    soup = scraper.fetch_page(test_url, test_params)
+
+    # Ensure HTTP GET was called correctly
+    assert calls["url"] == test_url
+    assert calls["params"] == test_params
+    # Ensure raise_for_status was invoked
+    assert calls.get("raised") is True
+    # Ensure returned object is parsed HTML
+    span = soup.find("span")
+    assert span is not None and span.text == "TestContent"
