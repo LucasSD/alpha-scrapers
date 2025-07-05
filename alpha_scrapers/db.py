@@ -14,7 +14,21 @@ class SqlitePersister:
         """
         Create the jobs table if it doesn't exist.
         """
-        return
+        cur = self.conn.cursor()
+        cur.execute(
+            """
+        CREATE TABLE IF NOT EXISTS jobs (
+            job_id     TEXT PRIMARY KEY,
+            title      TEXT,
+            location   TEXT,
+            type       TEXT,
+            url        TEXT,
+            first_seen TIMESTAMP,
+            last_seen  TIMESTAMP
+        )
+        """
+        )
+        self.conn.commit()
 
     def save_jobs(self, records):
         return
