@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
-from urllib.parse import urljoin
+from pathlib import Path, PurePosixPath
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -107,14 +107,20 @@ class CiscoScraper:
         job_links = self.get_job_links(soup)
         results = []
         ts = datetime.now(timezone.utc).isoformat()  # timestamp per job
-        # TODO: remove limit below
-        for url in job_links[:2]:
+
+        for url in job_links:
             try:
                 job_soup = self.fetch_page(url)
-
+                job_id = self.parse_field(job_soup, "Job Id")
+                if not job_id:
+                    # Extract the job ID (final path segment) cleanly, stripping off any query or fragment
+                    job_id = PurePosixPath(urlparse(url).path).name
+                    logging.warning(
+                        f"Falling back to URL-derived job_id {job_id} for {url}"
+                    )
                 record = {
                     "url": url,
-                    "job_id": self.parse_field(job_soup, "Job Id"),
+                    "job_id": job_id,
                     "title": self.parse_job_title(job_soup),
                     "location": self.parse_field(job_soup, "Location:")
                     or self.parse_field(job_soup, "Location"),
