@@ -5,6 +5,8 @@ from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup, Tag
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from alpha_scrapers.exporters import dump_to_json
 
@@ -24,6 +26,17 @@ class CiscoScraper:
 
     def __init__(self):
         self.session = requests.Session()
+        # (In production, configure HTTP/S proxies here)
+        retries = Retry(
+            total=3,
+            backoff_factor=0.5,
+            #  tradeoff whether to add 404 and other error statuses here
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"],
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
     def fetch_page(self, url: str, params: dict = None) -> BeautifulSoup:
         """
@@ -87,18 +100,22 @@ class CiscoScraper:
         ts = datetime.now(timezone.utc).isoformat()  # timestamp per job
         # TODO: remove limit below
         for url in job_links[:2]:
-            job_soup = self.fetch_page(url)
+            try:
+                job_soup = self.fetch_page(url)
 
-            record = {
-                "url": url,
-                "job_id": self.parse_field(job_soup, "Job Id"),
-                "title": self.parse_job_title(job_soup),
-                "location": self.parse_field(job_soup, "Location:")
-                or self.parse_field(soup, "Location"),
-                "type": self.parse_field(job_soup, "Job Type"),
-                "scraped_at": ts,
-            }
-            results.append(record)
+                record = {
+                    "url": url,
+                    "job_id": self.parse_field(job_soup, "Job Id"),
+                    "title": self.parse_job_title(job_soup),
+                    "location": self.parse_field(job_soup, "Location:")
+                    or self.parse_field(soup, "Location"),
+                    "type": self.parse_field(job_soup, "Job Type"),
+                    "scraped_at": ts,
+                }
+                results.append(record)
+            except Exception as e:
+                logging.error(f"✖ Failed to fetch {url}: {e}")
+                continue
 
         return results
 
