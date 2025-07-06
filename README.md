@@ -21,6 +21,20 @@ Python scrapers for:
 
 ---
 
+ **Prerequisites**
+
+ - **Python 3.10 or greater**
+   We recommend using [pyenv](https://github.com/pyenv/pyenv) to install and manage your Python versions.
+   ```bash
+   pyenv install 3.xx.x
+   pyenv local 3.xx.x
+   ```
+
+ - **Poetry** for dependency & environment management
+   Official guide if needed: [Poetry Documentation](https://python-poetry.org/docs/)
+
+---
+
 ## 1. Setup
 
 1. **Clone the repository**:
@@ -28,8 +42,18 @@ Python scrapers for:
    git clone git@github.com:LucasSD/alpha-scrapers.git
    cd alpha-scrapers
    ```
+2. ```bash
+   pyenv local 3.xx.x
+   poetry env use "$(pyenv which python)"
+   ```
 
-2. **Install dependencies**:
+   If you don’t use pyenv, just be sure your python --version is ≥3.10 and that Poetry picks it up. For example, you can explicitly point Poetry at your interpreter:
+   ```bash
+   # if python3.10 is on your PATH
+   poetry env use python3.10
+   ```
+
+3. **Install dependencies**:
    ```bash
    poetry install
    ```
@@ -114,7 +138,7 @@ poetry run pre-commit run --all-files
 
  - Switch to async (using `aiohttp` or `httpx`) for higher throughput when scraping many pages.
  - find further DRY improvements
-
+ - use walrus operator more consistently
 
 ---
 
