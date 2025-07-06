@@ -1,4 +1,7 @@
 import logging
+from datetime import datetime, timezone
+from pathlib import PurePosixPath
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -61,18 +64,38 @@ class QrtScraper:
     def run(self):
         data = self.fetch_listings_page()
         jobs = data.get("jobs")
+        results = []
+        ts = datetime.now(timezone.utc).isoformat()  # timestamp per job
         for job in jobs:
             url = jmes_get("absolute_url", job, "")
             if not (job_id := jmes_get("id", job)):
+                # Extract the job ID (final path segment) cleanly, stripping off any query or fragment
+                job_id = PurePosixPath(urlparse(url).path).name
                 logging.warning(
                     f"Falling back to URL-derived job_id {job_id} for {url}"
                 )
-            title = jmes_get("title", job, "")
-            location = jmes_get("location.name", job, "")
-            job_type = self.parse_job_type(job)
-            # breakpoint()
+
+            record = {
+                "url": url,
+                "job_id": job_id,
+                "title": jmes_get("title", job, ""),
+                "location": jmes_get("location.name", job, ""),
+                "type": self.parse_job_type(job),
+                "scraped_at": ts,
+            }
+
+            # optional logging
+            missing = [k for k, v in record.items() if v == "" and k != "scraped_at"]
+            if missing:
+                logging.warning(
+                    f"Missing {missing} for {record['url']} — jmes_paths may need updating"
+                )
+            results.append(record)
+
+        return results
 
 
 if __name__ == "__main__":
     scraper = QrtScraper()
     data = scraper.run()
+    # breakpoint()
