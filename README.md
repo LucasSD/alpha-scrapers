@@ -2,8 +2,22 @@
 
 Python scrapers for:
 
-1. **Cisco Jobs** (HTML + API + DB + JSON)
-2. **(TBC)**
+1. **Cisco Jobs** (HTML → DB & JSON)
+   - Demonstrates HTML web scraping:
+     1. Fetch the main listings page (HTML).
+     2. Extract each job’s link.
+     3. Request each job’s detail page and parse out the fields.
+   - Although the listing page exposes most fields, we scrape each job's page for greater reliability. I avoided making the scraper asyncronous because this was a demonstration of using Python `requests`
+
+2. **QRT Jobs** (JSON → DB & JSON)
+   - Shows the alternative of consuming a RESTful API:
+     1. Fetch one single JSON payload with *all* jobs.
+     2. Extract every field directly (no per-job page requests).
+   - Highlights how an API-first approach can be cleaner, faster, and more reliable in production.
+
+---
+
+> **Note:** In a real production context you might choose one approach over the other (HTML vs. API, one listings page vs individual job pages) based on latency, data guarantees, or authorisation, but here both patterns are on display.
 
 ---
 
@@ -32,18 +46,17 @@ This creates an isolated virtual environment and installs the following:
 From the project root, run:
 ```bash
 poetry run python -m alpha_scrapers.cisco_scraper
+poetry run python -m alpha_scrapers.qrt_scraper
 ```
 
-- It will fetch the Cisco “SearchJobs” page, extract each job’s detail,
-- **Persist** into a local SQLite DB at `data/cisco_jobs.db` (creating the file if needed),
-- **Archive** a timestamped JSON under `data/archive/YYYYMMDDTHHMMSSZ.json`,
-- **Overwrite** `data/latest.json` with the newest snapshot.
+- They will extract each job’s detail,
+- **Persist** into a local SQLite DB at `data/<target_name>/<target_name>_jobs.db` (creating the file if needed),
+- **Archive** a timestamped JSON under `data/<target_name>/archive/YYYYMMDDTHHMMSSZ.json`,
+- **Overwrite** `data/<target_name>/latest.json` with the newest snapshot.
 
 ---
 
 ## 🔍 Database Persistence
-
-- **File:** `data/cisco_jobs.db`.
 - **Table:** `jobs`, automatically created on first run.
 - **Upsert logic:**
   - If a record’s `job_id` is **new**, it’s **inserted** and its `first_seen` and `last_seen` are set to the current timestamp.
@@ -59,8 +72,8 @@ This design ensures you can:
 
 ## 📁 JSON Output
 
-- **`data/archive/YYYYMMDDTHHMMSSZ.json`** — immutable snapshot per run
-- **`data/latest.json`** — overwritten each run, contains the most recent full set
+- **`archive/YYYYMMDDTHHMMSSZ.json`** — immutable snapshot per run
+- **`latest.json`** — overwritten each run, contains the most recent full set
 - **Schema per record:**
   ```json
   {
@@ -96,6 +109,13 @@ Run **all** hooks locally:
 ```bash
 poetry run pre-commit run --all-files
 ```
+
+## Improvements
+
+ - **Configurable concurrency**
+  Switch to async (using `aiohttp` or `httpx`) for higher throughput when scraping many pages.
+ - find further DRY improvements
+
 
 ---
 
