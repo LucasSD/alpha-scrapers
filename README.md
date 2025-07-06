@@ -112,8 +112,7 @@ poetry run pre-commit run --all-files
 
 ## Improvements
 
- - **Configurable concurrency**
-  Switch to async (using `aiohttp` or `httpx`) for higher throughput when scraping many pages.
+ - Switch to async (using `aiohttp` or `httpx`) for higher throughput when scraping many pages.
  - find further DRY improvements
 
 
