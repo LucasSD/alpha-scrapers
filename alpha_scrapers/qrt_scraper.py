@@ -63,7 +63,7 @@ class QrtScraper:
 
     def run(self):
         data = self.fetch_listings_page()
-        jobs = data.get("jobs")
+        jobs = jmes_get("jobs", data, [])
         results = []
         ts = datetime.now(timezone.utc).isoformat()  # timestamp per job
         for job in jobs:
