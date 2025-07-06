@@ -144,28 +144,31 @@ class CiscoScraper:
         return results
 
 
-if __name__ == "__main__":
+def main():
     scraper = CiscoScraper()
     data = scraper.run()
 
     from alpha_scrapers.db import SqlitePersister
 
-    db_path = Path(__file__).parent.parent / "data" / "cisco_jobs.db"
+    project_root = Path(__file__).parent.parent
+    db_path = project_root / "data" / "cisco" / "cisco_jobs.db"
+    now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    archive_dir = project_root / "data" / "cisco" / "archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    archive_path = archive_dir / f"{now}.json"
+    latest_path = project_root / "data" / "cisco" / "latest.json"
+
     persister = SqlitePersister(str(db_path))
     persister.save_jobs(data)
-
-    now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    project_root = Path(__file__).parent.parent
-
-    # Archive folder: data/archive/20250704T153000Z.json
-    archive_path = project_root / "data" / "archive" / f"{now}.json"
-    # Latest overwrite
-    latest_path = project_root / "data" / "latest.json"
 
     dump_to_json(data, str(archive_path))
     dump_to_json(data, str(latest_path))
 
-    print(f"✅ Wrote {len(data)} records to DB and JSON:")
-    print(f"   • SQLite DB: {db_path}")
-    print(f"   • Archive:   {archive_path}")
-    print(f"   • Latest:    {latest_path}")
+    logging.info(f"✅ Wrote {len(data)} records to DB and JSON:")
+    logging.info(f"   • SQLite DB: {db_path}")
+    logging.info(f"   • Archive:   {archive_path}")
+    logging.info(f"   • Latest:    {latest_path}")
+
+
+if __name__ == "__main__":
+    main()
