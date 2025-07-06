@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 
 import alpha_scrapers.cisco_scraper as mod
 from alpha_scrapers.cisco_scraper import CiscoScraper, LinkExtractionError
+from tests.test_utils import FIXED_TS, DummyDateTime
 
 
 @pytest.fixture(scope="module")
@@ -176,18 +177,6 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
 ################################################################################
 #                            INTEGRATION TEST: run()
 ################################################################################
-
-
-FIXED_TS = "2025-07-06T12:00:00+00:00"
-
-
-class DummyDateTime:
-    @classmethod
-    def now(cls, tz=None):
-        return cls()
-
-    def isoformat(self):
-        return FIXED_TS
 
 
 @pytest.fixture(autouse=True)

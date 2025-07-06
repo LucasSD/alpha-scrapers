@@ -2,6 +2,7 @@ import pytest
 
 import alpha_scrapers.qrt_scraper as mod
 from alpha_scrapers.qrt_scraper import QrtScraper
+from tests.test_utils import FIXED_TS, DummyDateTime
 
 
 @pytest.fixture(scope="module")
@@ -115,20 +116,6 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
 ################################################################################
 #                            INTEGRATION TEST: run()
 ################################################################################
-
-# Freeze the timestamp
-FIXED_TS = "2025-07-06T12:00:00+00:00"
-
-
-class DummyDateTime:
-    @classmethod
-    def now(cls, tz=None):
-        return cls()
-
-    def isoformat(self):
-        return FIXED_TS
-
-
 @pytest.fixture(autouse=True)
 def freeze_datetime(monkeypatch):
     # Monkey-patch datetime in the module so run() uses FIXED_TS
