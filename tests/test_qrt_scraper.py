@@ -2,7 +2,7 @@ import pytest
 
 import alpha_scrapers.qrt_scraper as mod
 from alpha_scrapers.qrt_scraper import QrtScraper
-from tests.test_utils import FIXED_TS, DummyDateTime
+from tests.utils import FIXED_TS, DummyDateTime
 
 
 @pytest.fixture(scope="module")

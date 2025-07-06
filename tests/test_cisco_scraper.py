@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 import alpha_scrapers.cisco_scraper as mod
 from alpha_scrapers.cisco_scraper import CiscoScraper, LinkExtractionError
-from tests.test_utils import FIXED_TS, DummyDateTime
+from tests.utils import FIXED_TS, DummyDateTime
 
 
 @pytest.fixture(scope="module")
