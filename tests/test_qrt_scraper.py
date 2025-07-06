@@ -1,5 +1,6 @@
 import pytest
 
+import alpha_scrapers.qrt_scraper as mod
 from alpha_scrapers.qrt_scraper import QrtScraper
 
 
@@ -109,3 +110,78 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
     assert calls.get("parsed_json") is True
     # Ensure returned object is the dummy JSON
     assert data == dummy_json
+
+
+################################################################################
+#                            INTEGRATION TEST: run()
+################################################################################
+
+# Freeze the timestamp
+FIXED_TS = "2025-07-06T12:00:00+00:00"
+
+
+class DummyDateTime:
+    @classmethod
+    def now(cls, tz=None):
+        return cls()
+
+    def isoformat(self):
+        return FIXED_TS
+
+
+@pytest.fixture(autouse=True)
+def freeze_datetime(monkeypatch):
+    # Monkey-patch datetime in the module so run() uses FIXED_TS
+    monkeypatch.setattr(mod, "datetime", DummyDateTime)
+
+
+def test_run_produces_expected_records(monkeypatch, scraper):
+    # Stub out the listings JSON
+    def job_template(job_id, title, loc, typ, url):
+        return {
+            "id": job_id,
+            "absolute_url": url,
+            "title": title,
+            "location": {"name": loc},
+            "metadata": [{"name": "Experience (for job posting)", "value": typ}],
+        }
+
+    url_a = "https://boards-api.greenhouse.io/jobs/A/1"
+    url_b = "https://boards-api.greenhouse.io/jobs/B/2"
+    dummy_listings = {
+        "jobs": [
+            job_template("J1", "Title A", "Loc A", "Type A", url_a),
+            job_template(
+                "", "Title B", "Loc B", "Type B", url_b
+            ),  # missing id -> fallback
+        ]
+    }
+
+    monkeypatch.setattr(
+        scraper, "fetch_listings_page", lambda params=None: dummy_listings
+    )
+
+    # Run and verify
+    results = scraper.run()
+    expected = [
+        {
+            "url": url_a,
+            "job_id": "J1",  # from id
+            "title": "Title A",
+            "location": "Loc A",
+            "type": "Type A",
+            "scraped_at": FIXED_TS,
+        },
+        {
+            "url": url_b,
+            "job_id": "2",  # fallback from URL path
+            "title": "Title B",
+            "location": "Loc B",
+            "type": "Type B",
+            "scraped_at": FIXED_TS,
+        },
+    ]
+
+    results_sorted = sorted(results, key=lambda r: r["url"])
+    expected_sorted = sorted(expected, key=lambda r: r["url"])
+    assert results_sorted == expected_sorted
