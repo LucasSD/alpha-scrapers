@@ -7,12 +7,6 @@ from alpha_scrapers.alpha_scraper import AlphaScraper
 from alpha_scrapers.exporters import dump_to_json
 from alpha_scrapers.utils.extraction import jmes_get
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
-
 
 class QrtScraper(AlphaScraper):
     """
@@ -34,12 +28,6 @@ class QrtScraper(AlphaScraper):
         logging.info(f"GET {url} → {response.status_code}")
         response.raise_for_status()
         return response.json()
-
-    def fetch_listings_page(self, params: dict = None) -> dict:
-        """
-        Fetch and parse the main listings page.
-        """
-        return self.fetch_page(self.BASE_URL, params)
 
     def parse_job_type(self, job):
         for entry in jmes_get("metadata", job, []):

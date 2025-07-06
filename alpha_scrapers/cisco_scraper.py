@@ -8,12 +8,6 @@ from bs4 import BeautifulSoup, Tag
 from alpha_scrapers.alpha_scraper import AlphaScraper
 from alpha_scrapers.exporters import dump_to_json
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
-
 
 class LinkExtractionError(Exception):
     pass
@@ -37,12 +31,6 @@ class CiscoScraper(AlphaScraper):
         logging.info(f"GET {url} → {response.status_code}")
         response.raise_for_status()
         return BeautifulSoup(response.text, "html.parser")
-
-    def fetch_listings_page(self, params: dict = None) -> BeautifulSoup:
-        """
-        Fetch and parse the main listings page.
-        """
-        return self.fetch_page(self.BASE_URL, params)
 
     def get_job_links(self, soup: BeautifulSoup) -> list[str]:
         """

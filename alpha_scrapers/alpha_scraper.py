@@ -1,6 +1,15 @@
+import logging
+from typing import Any, Optional
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 
 class AlphaScraper:
@@ -20,3 +29,10 @@ class AlphaScraper:
         adapter = HTTPAdapter(max_retries=retries)
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
+
+    def fetch_listings_page(self, params: Optional[dict] = None) -> Any:
+        """
+        Fetch and parse the main listings page.
+        The return type depends on the implementation of fetch_page in the child class.
+        """
+        return self.fetch_page(self.BASE_URL, params)
