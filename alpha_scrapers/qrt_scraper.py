@@ -3,10 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
+from alpha_scrapers.alpha_scraper import AlphaScraper
 from alpha_scrapers.exporters import dump_to_json
 from alpha_scrapers.utils.extraction import jmes_get
 
@@ -17,7 +14,7 @@ logging.basicConfig(
 )
 
 
-class QrtScraper:
+class QrtScraper(AlphaScraper):
     """
     Scraper for the QRT job search page.
     """
@@ -27,18 +24,7 @@ class QrtScraper:
     )
 
     def __init__(self):
-        self.session = requests.Session()
-        # (In production, configure HTTP/S proxies here)
-        retries = Retry(
-            total=3,
-            backoff_factor=0.5,
-            #  tradeoff whether to add 404 and other error statuses here
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET"],
-        )
-        adapter = HTTPAdapter(max_retries=retries)
-        self.session.mount("https://", adapter)
-        self.session.mount("http://", adapter)
+        super().__init__()
 
     def fetch_page(self, url: str, params: dict = None) -> dict:
         """

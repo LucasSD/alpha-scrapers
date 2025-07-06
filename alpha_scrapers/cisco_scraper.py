@@ -3,11 +3,9 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from urllib.parse import urljoin, urlparse
 
-import requests
 from bs4 import BeautifulSoup, Tag
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
+from alpha_scrapers.alpha_scraper import AlphaScraper
 from alpha_scrapers.exporters import dump_to_json
 
 logging.basicConfig(
@@ -21,7 +19,7 @@ class LinkExtractionError(Exception):
     pass
 
 
-class CiscoScraper:
+class CiscoScraper(AlphaScraper):
     """
     Basic scraper for the Cisco job search page.
     """
@@ -29,18 +27,7 @@ class CiscoScraper:
     BASE_URL = "https://jobs.cisco.com/jobs/SearchJobs/"
 
     def __init__(self):
-        self.session = requests.Session()
-        # (In production, configure HTTP/S proxies here)
-        retries = Retry(
-            total=3,
-            backoff_factor=0.5,
-            #  tradeoff whether to add 404 and other error statuses here
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET"],
-        )
-        adapter = HTTPAdapter(max_retries=retries)
-        self.session.mount("https://", adapter)
-        self.session.mount("http://", adapter)
+        super().__init__()
 
     def fetch_page(self, url: str, params: dict = None) -> BeautifulSoup:
         """
