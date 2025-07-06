@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 
 
 class SqlitePersister:
@@ -7,6 +8,8 @@ class SqlitePersister:
     """
 
     def __init__(self, db_path: str):
+        db_file = Path(db_path)
+        db_file.parent.mkdir(parents=True, exist_ok=True)  # create any missing folders
         self.conn = sqlite3.connect(db_path)
         self._init_schema()
 

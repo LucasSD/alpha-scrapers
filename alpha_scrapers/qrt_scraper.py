@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 import requests
@@ -98,4 +98,12 @@ class QrtScraper:
 if __name__ == "__main__":
     scraper = QrtScraper()
     data = scraper.run()
-    # breakpoint()
+
+    from alpha_scrapers.db import SqlitePersister
+
+    db_path = Path(__file__).parent.parent / "data" / "qrt" / "qrt_jobs.db"
+    persister = SqlitePersister(str(db_path))
+    persister.save_jobs(data)
+
+    print(f"✅ Wrote {len(data)} records to DB and JSON:")
+    print(f"   • SQLite DB: {db_path}")
