@@ -1,3 +1,16 @@
+"""
+test_cisco_scraper module
+========================
+
+Unit and integration tests for the CiscoScraper class in ``alpha_scrapers.cisco_scraper``.
+
+Tests cover:
+- Job title and field extraction from HTML
+- Job link extraction and deduplication
+- HTTP and parsing logic
+- Integration of the full run() pipeline
+"""
+
 import pytest
 from bs4 import BeautifulSoup
 
@@ -8,6 +21,12 @@ from tests.utils import FIXED_TS, DummyDateTime
 
 @pytest.fixture(scope="module")
 def scraper():
+    """
+    Fixture providing a CiscoScraper instance for tests.
+
+    :returns: CiscoScraper instance
+    :rtype: CiscoScraper
+    """
     return CiscoScraper()
 
 
@@ -44,6 +63,16 @@ def scraper():
     ],
 )
 def test_parse_job_title(html, expected, scraper):
+    """
+    Test extraction of job title from HTML using CiscoScraper.parse_job_title.
+
+    :param html: HTML snippet containing job title
+    :type html: str
+    :param expected: Expected extracted title
+    :type expected: str
+    :param scraper: CiscoScraper instance
+    :type scraper: CiscoScraper
+    """
     soup = BeautifulSoup(html, "html.parser")
     assert scraper.parse_job_title(soup) == expected
 
@@ -92,11 +121,29 @@ def test_parse_job_title(html, expected, scraper):
     ],
 )
 def test_parse_field(html, label, expected, scraper):
+    """
+    Test extraction of a field value from HTML using CiscoScraper.parse_field.
+
+    :param html: HTML snippet containing field
+    :type html: str
+    :param label: Field label to search for
+    :type label: str
+    :param expected: Expected extracted value
+    :type expected: str
+    :param scraper: CiscoScraper instance
+    :type scraper: CiscoScraper
+    """
     soup = BeautifulSoup(html, "html.parser")
     assert scraper.parse_field(soup, label) == expected
 
 
 def test_get_job_links_dedup_and_filter(scraper):
+    """
+    Test that get_job_links returns deduplicated and filtered job links.
+
+    :param scraper: CiscoScraper instance
+    :type scraper: CiscoScraper
+    """
     html = """
     <table class="table_basic-1">
       <a href="/jobs/ProjectDetail/JobA/1">Job A</a>
@@ -116,6 +163,12 @@ def test_get_job_links_dedup_and_filter(scraper):
 
 
 def test_get_job_links_empty(scraper):
+    """
+    Test that get_job_links raises LinkExtractionError when no job links are found.
+
+    :param scraper: CiscoScraper instance
+    :type scraper: CiscoScraper
+    """
     html = '<table class="table_basic-1"><a href="/jobs/Other/1">Other</a></table>'
     soup = BeautifulSoup(html, "html.parser")
     with pytest.raises(LinkExtractionError):
@@ -123,6 +176,14 @@ def test_get_job_links_empty(scraper):
 
 
 def test_fetch_listings_page_delegates(scraper, monkeypatch):
+    """
+    Test that fetch_listings_page delegates to fetch_page with correct arguments.
+
+    :param scraper: CiscoScraper instance
+    :type scraper: CiscoScraper
+    :param monkeypatch: pytest monkeypatch fixture
+    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
+    """
     dummy_soup = BeautifulSoup("<html></html>", "html.parser")
     called = {}
 
@@ -141,6 +202,14 @@ def test_fetch_listings_page_delegates(scraper, monkeypatch):
 
 
 def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
+    """
+    Test that fetch_page makes an HTTP call, parses HTML, and returns BeautifulSoup.
+
+    :param monkeypatch: pytest monkeypatch fixture
+    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
+    :param scraper: CiscoScraper instance
+    :type scraper: CiscoScraper
+    """
     html = "<div><span>TestContent</span></div>"
     calls = {}
 
@@ -181,10 +250,30 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
 
 @pytest.fixture(autouse=True)
 def freeze_datetime(monkeypatch):
+    """
+    Freeze datetime in alpha_scrapers.cisco_scraper to a fixed value for integration tests.
+
+    :param monkeypatch: Built-in pytest fixture for monkeypatching.
+    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
+    """
     monkeypatch.setattr(mod, "datetime", DummyDateTime)
 
 
 def make_job_soup(job_id, title, location, job_type):
+    """
+    Create a BeautifulSoup object representing a job detail page with given fields.
+
+    :param job_id: Job identifier to embed.
+    :type job_id: str
+    :param title: Job title to embed.
+    :type title: str
+    :param location: Job location to embed.
+    :type location: str
+    :param job_type: Job type to embed.
+    :type job_type: str
+    :returns: Parsed HTML as BeautifulSoup.
+    :rtype: BeautifulSoup
+    """
     html = f"""
     <html><body>
       <h2 class="title_page-1">{title}</h2>
@@ -197,6 +286,14 @@ def make_job_soup(job_id, title, location, job_type):
 
 
 def test_run_produces_expected_records(monkeypatch, scraper):
+    """
+    Integration test for run(): verifies complete end-to-end job extraction and record structure.
+
+    :param monkeypatch: Built-in pytest fixture for monkeypatching.
+    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
+    :param scraper: Fixture providing a CiscoScraper instance.
+    :type scraper: CiscoScraper
+    """
     # listings page with two links
     html_list = """
     <table class="table_basic-1">

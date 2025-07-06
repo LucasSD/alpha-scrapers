@@ -1,9 +1,24 @@
+"""
+test_db module
+==============
+
+Tests for the SqlitePersister class in ``alpha_scrapers.db``.
+
+Covers:
+- Table creation in memory and on disk
+- Schema and primary key checks
+- Insert and update behavior for job records
+"""
+
 from alpha_scrapers.db import SqlitePersister
 
 
 def test_jobs_table_created_in_memory():
     """
-    Instantiating against ":memory:" should create the 'jobs' table.
+    Test that instantiating SqlitePersister with ':memory:' creates the 'jobs' table.
+
+    :returns: None
+    :rtype: None
     """
     persister = SqlitePersister(":memory:")
     cursor = persister.conn.cursor()
@@ -13,7 +28,10 @@ def test_jobs_table_created_in_memory():
 
 def test_jobs_table_columns_and_pk_in_memory():
     """
-    The 'jobs' table in an in-memory DB must have the expected columns and PK.
+    Test that the 'jobs' table in an in-memory DB has the expected columns and primary key.
+
+    :returns: None
+    :rtype: None
     """
     persister = SqlitePersister(":memory:")
     cursor = persister.conn.cursor()
@@ -36,8 +54,12 @@ def test_jobs_table_columns_and_pk_in_memory():
 
 def test_jobs_table_columns_and_pk_file(tmp_path):
     """
-    The 'jobs' table in a file-based DB must have the expected columns and PK,
-    and the file should be created.
+    Test that the 'jobs' table in a file-based DB has the expected columns and PK, and the file is created.
+
+    :param tmp_path: pytest fixture for a temporary directory
+    :type tmp_path: pathlib.Path
+    :returns: None
+    :rtype: None
     """
     db_file = tmp_path / "test.db"
     path = str(db_file)
@@ -65,7 +87,15 @@ def test_jobs_table_columns_and_pk_file(tmp_path):
 
 
 def test_insert_and_update_behavior(tmp_path):
-    # 1) Create an in‐memory persister
+    """
+    Test insert and update behavior for job records in SqlitePersister.
+
+    :param tmp_path: pytest fixture for a temporary directory
+    :type tmp_path: pathlib.Path
+    :returns: None
+    :rtype: None
+    """
+    # 1) Create an in-memory persister
     persister = SqlitePersister(":memory:")
     now1 = "2025-07-05T12:00:00Z"
     now2 = "2025-07-05T12:05:00Z"

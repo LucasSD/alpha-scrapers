@@ -1,3 +1,8 @@
+"""
+sqlite_persister module
+Handles persistence of job records into an SQLite database.
+"""
+
 import sqlite3
 from pathlib import Path
 
@@ -5,9 +10,20 @@ from pathlib import Path
 class SqlitePersister:
     """
     Handles SQLite persistence for the jobs table.
+
+    :ivar conn: Active SQLite connection.
+    :vartype conn: sqlite3.Connection
     """
 
     def __init__(self, db_path: str):
+        """
+        Initialize the persister by ensuring the database directory exists,
+        connecting to the SQLite database, and creating the schema if needed.
+
+        :param db_path: Filesystem path to the SQLite database file.
+        :type db_path: str
+        :raises OSError: If the database directory cannot be created.
+        """
         db_file = Path(db_path)
         db_file.parent.mkdir(parents=True, exist_ok=True)  # create any missing folders
         self.conn = sqlite3.connect(db_path)
@@ -15,7 +31,9 @@ class SqlitePersister:
 
     def _init_schema(self):
         """
-        Create the jobs table if it doesn't exist.
+        Create the jobs table if it doesn't already exist.
+
+        :returns: None
         """
         cur = self.conn.cursor()
         cur.execute(
@@ -36,7 +54,12 @@ class SqlitePersister:
     def save_jobs(self, records):
         """
         Insert new jobs or update existing ones based on job_id.
-        first_seen is set on insert; last_seen always updated.
+        Sets first_seen on insert; always updates last_seen.
+
+        :param records: List of job record dictionaries containing keys:
+                        'job_id', 'title', 'location', 'type', 'url', 'scraped_at'.
+        :type records: list[dict]
+        :returns: None
         """
         cur = self.conn.cursor()
         for rec in records:

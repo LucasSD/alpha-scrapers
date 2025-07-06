@@ -1,3 +1,15 @@
+"""
+test_qrt_scraper module
+=======================
+
+Unit and integration tests for the QrtScraper class in ``alpha_scrapers.qrt_scraper``.
+
+Tests cover:
+- Metadata extraction and job type parsing
+- HTTP and JSON parsing logic
+- Integration of the full run() pipeline
+"""
+
 import pytest
 
 import alpha_scrapers.qrt_scraper as mod
@@ -7,6 +19,12 @@ from tests.utils import FIXED_TS, DummyDateTime
 
 @pytest.fixture(scope="module")
 def scraper():
+    """
+    Fixture providing a QrtScraper instance for tests.
+
+    :returns: QrtScraper instance
+    :rtype: QrtScraper
+    """
     return QrtScraper()
 
 
@@ -48,6 +66,16 @@ def scraper():
     ],
 )
 def test_parse_job_type_various(scraper, metadata, expected):
+    """
+    Test parsing of job type from job metadata using QrtScraper.parse_job_type.
+
+    :param scraper: QrtScraper instance
+    :type scraper: QrtScraper
+    :param metadata: Metadata list to test
+    :type metadata: list[dict] or None
+    :param expected: Expected job type string
+    :type expected: str
+    """
     job = {}
     if metadata is not None:
         job["metadata"] = metadata
@@ -56,6 +84,14 @@ def test_parse_job_type_various(scraper, metadata, expected):
 
 
 def test_fetch_listings_page_delegates(scraper, monkeypatch):
+    """
+    Test that fetch_listings_page delegates to fetch_page with correct arguments.
+
+    :param scraper: QrtScraper instance
+    :type scraper: QrtScraper
+    :param monkeypatch: pytest monkeypatch fixture
+    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
+    """
     dummy_data = {"jobs": []}
     called = {}
 
@@ -75,6 +111,14 @@ def test_fetch_listings_page_delegates(scraper, monkeypatch):
 
 
 def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
+    """
+    Test that fetch_page makes an HTTP call, parses JSON, and returns the data.
+
+    :param monkeypatch: pytest monkeypatch fixture
+    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
+    :param scraper: QrtScraper instance
+    :type scraper: QrtScraper
+    """
     dummy_json = {"key": "value"}
     calls = {}
 
@@ -118,11 +162,26 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
 ################################################################################
 @pytest.fixture(autouse=True)
 def freeze_datetime(monkeypatch):
+    """
+    Monkeypatch datetime in the module so run() uses FIXED_TS for deterministic tests.
+
+    :param monkeypatch: pytest monkeypatch fixture
+    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
+    """
     # Monkey-patch datetime in the module so run() uses FIXED_TS
     monkeypatch.setattr(mod, "datetime", DummyDateTime)
 
 
 def test_run_produces_expected_records(monkeypatch, scraper):
+    """
+    Integration test for run(): verifies complete end-to-end job extraction and record structure.
+
+    :param monkeypatch: pytest monkeypatch fixture
+    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
+    :param scraper: QrtScraper instance
+    :type scraper: QrtScraper
+    """
+
     # Stub out the listings JSON
     def job_template(job_id, title, loc, typ, url):
         return {

@@ -1,3 +1,8 @@
+"""
+cisco_scraper module
+Provides the CiscoScraper class for scraping Cisco job listings with built-in retry logic and export capabilities.
+"""
+
 import logging
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -10,12 +15,17 @@ from alpha_scrapers.exporters import dump_to_json
 
 
 class LinkExtractionError(Exception):
-    pass
+    """
+    Exception raised when no job links can be extracted from the listings page.
+    """
 
 
 class CiscoScraper(AlphaScraper):
     """
     Basic scraper for the Cisco job search page.
+
+    :cvar BASE_URL: Base URL for Cisco job search listings.
+    :vartype BASE_URL: str
     """
 
     BASE_URL = "https://jobs.cisco.com/jobs/SearchJobs/"
@@ -26,6 +36,14 @@ class CiscoScraper(AlphaScraper):
     def fetch_page(self, url: str, params: dict = None) -> BeautifulSoup:
         """
         Fetch any URL and return a BeautifulSoup object for parsing.
+
+        :param url: The URL to fetch.
+        :type url: str
+        :param params: Optional query parameters to include in the request.
+        :type params: dict or None
+        :returns: Parsed HTML content.
+        :rtype: BeautifulSoup
+        :raises requests.RequestException: If the HTTP request fails after retries.
         """
         response = self.session.get(url, params=params)
         logging.info(f"GET {url} → {response.status_code}")
@@ -35,6 +53,12 @@ class CiscoScraper(AlphaScraper):
     def get_job_links(self, soup: BeautifulSoup) -> list[str]:
         """
         Get the job links from the listings page.
+
+        :param soup: BeautifulSoup of the listings page.
+        :type soup: BeautifulSoup
+        :returns: List of absolute URLs for individual job details.
+        :rtype: list[str]
+        :raises LinkExtractionError: If no job links are found.
         """
         links = {
             #  ensure relative URLs are handled
@@ -49,8 +73,14 @@ class CiscoScraper(AlphaScraper):
 
     def parse_field(self, soup: BeautifulSoup, label: str) -> str:
         """
-        Helper to find a <div> with exact text == label,
-        then return text of its sibling <div class='fields-data_value'>.
+        Find a <div> whose text exactly matches `label`, then return its sibling field value.
+
+        :param soup: BeautifulSoup of the job detail page.
+        :type soup: BeautifulSoup
+        :param label: The exact text label to search for.
+        :type label: str
+        :returns: Text of the corresponding data value, or empty string if not found.
+        :rtype: str
         """
         try:
             label_div = soup.find(
@@ -70,7 +100,12 @@ class CiscoScraper(AlphaScraper):
 
     def parse_job_title(self, soup: BeautifulSoup) -> str:
         """
-        Extract the job title.
+        Extract the job title from the detail page.
+
+        :param soup: BeautifulSoup of the job detail page.
+        :type soup: BeautifulSoup
+        :returns: The job title text, or empty string if not found.
+        :rtype: str
         """
         tag = soup.find("h2", class_="title_page-1")
         if tag and tag.get_text(strip=True):
@@ -78,6 +113,19 @@ class CiscoScraper(AlphaScraper):
         return ""
 
     def run(self):
+        """
+        Execute the scraper: fetch the listings page, extract job URLs, fetch each job,
+        parse fields, and collect structured records.
+
+        :returns: A list of job records, each containing:
+                  - url: Job detail URL
+                  - job_id: Unique job identifier
+                  - title: Job title
+                  - location: Job location
+                  - type: Job type
+                  - scraped_at: ISO-formatted UTC timestamp
+        :rtype: list[dict]
+        """
         soup = self.fetch_listings_page()
         job_links = self.get_job_links(soup)
         results = []
@@ -120,6 +168,11 @@ class CiscoScraper(AlphaScraper):
 
 
 def main():
+    """
+    Run the CiscoScraper, persist results to SQLite and JSON files, and archive them.
+
+    :raises Exception: If any file I/O or database operation fails.
+    """
     scraper = CiscoScraper()
     data = scraper.run()
 

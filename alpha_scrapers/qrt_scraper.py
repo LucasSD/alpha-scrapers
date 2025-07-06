@@ -1,3 +1,9 @@
+"""
+qrt_scraper module
+Provides the QrtScraper class for scraping QRT (Qube Research & Technologies) job listings
+via the Greenhouse Boards API and exporting results.
+"""
+
 import logging
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -10,7 +16,10 @@ from alpha_scrapers.utils.extraction import jmes_get
 
 class QrtScraper(AlphaScraper):
     """
-    Scraper for the QRT job search page.
+    Scraper for the QRT job search page using Greenhouse's public API.
+
+    :cvar BASE_URL: API endpoint for QRT job listings.
+    :vartype BASE_URL: str
     """
 
     BASE_URL = (
@@ -22,7 +31,15 @@ class QrtScraper(AlphaScraper):
 
     def fetch_page(self, url: str, params: dict = None) -> dict:
         """
-        Fetch any URL and return a JSON response for parsing.
+        Fetch any URL and return its JSON response as a dictionary.
+
+        :param url: The URL to fetch.
+        :type url: str
+        :param params: Optional query parameters for the request.
+        :type params: dict or None
+        :returns: Parsed JSON content.
+        :rtype: dict
+        :raises requests.RequestException: If the HTTP request fails after retries.
         """
         response = self.session.get(url, params=params)
         logging.info(f"GET {url} → {response.status_code}")
@@ -30,12 +47,33 @@ class QrtScraper(AlphaScraper):
         return response.json()
 
     def parse_job_type(self, job):
+        """
+        Determine the job type (experience level) from the job metadata.
+
+        :param job: A single job entry from the API response.
+        :type job: dict
+        :returns: The value of the "Experience (for job posting)" metadata field,
+                  or an empty string if not present.
+        :rtype: str
+        """
         for entry in jmes_get("metadata", job, []):
             if jmes_get("name", entry, "").casefold() == "experience (for job posting)":
                 return jmes_get("value", entry, "")
         return ""
 
     def run(self):
+        """
+        Execute the scraper: fetch listings, extract job data, and build records.
+
+        :returns: List of job records, each containing:
+                  - url: Job detail URL
+                  - job_id: Unique job identifier
+                  - title: Job title
+                  - location: Job location name
+                  - type: Job type (experience level)
+                  - scraped_at: ISO-formatted UTC timestamp
+        :rtype: list[dict]
+        """
         data = self.fetch_listings_page()
         jobs = jmes_get("jobs", data, [])
         results = []
@@ -70,6 +108,11 @@ class QrtScraper(AlphaScraper):
 
 
 def main():
+    """
+    Run the QrtScraper, persist results to SQLite and JSON files, and archive them.
+
+    :raises Exception: If any file I/O or database operation fails.
+    """
     scraper = QrtScraper()
     data = scraper.run()
 

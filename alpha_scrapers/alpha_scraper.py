@@ -1,3 +1,8 @@
+"""
+AlphaScraper module
+Provides the AlphaScraper class for scraping job boards with built-in retry logic.
+"""
+
 import logging
 from typing import Any, Optional
 
@@ -14,10 +19,20 @@ logging.basicConfig(
 
 class AlphaScraper:
     """
-    Base scraper class for job boards, providing a requests session with retry logic.
+    Base scraper class, providing a requests session with retry logic.
+
+    :ivar session: A configured requests.Session with retry-enabled HTTPAdapter.
+    :vartype session: requests.Session
     """
 
     def __init__(self):
+        """
+        Initialize the AlphaScraper.
+
+        Sets up a `requests.Session` with retry logic for common transient HTTP errors.
+
+        :raises Exception: If session setup fails.
+        """
         self.session = requests.Session()
         # (In production, configure HTTP/S proxies here)
         retries = Retry(
@@ -33,6 +48,14 @@ class AlphaScraper:
     def fetch_listings_page(self, params: Optional[dict] = None) -> Any:
         """
         Fetch and parse the main listings page.
-        The return type depends on the implementation of fetch_page in the child class.
+
+        Delegates to `fetch_page` implemented by subclasses. The return
+        type depends on that implementation.
+
+        :param params: Query parameters to include in the request.
+        :type params: dict or None
+        :returns: Parsed page data, as defined by subclass.
+        :rtype: Any
+        :raises requests.RequestException: If the HTTP request fails after retries.
         """
         return self.fetch_page(self.BASE_URL, params)
