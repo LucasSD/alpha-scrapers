@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from alpha_scrapers.utils.extraction import jmes_get
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -37,12 +39,12 @@ class QrtScraper:
 
     def fetch_page(self, url: str, params: dict = None) -> BeautifulSoup:
         """
-        Fetch any URL and return a BeautifulSoup object for parsing.
+        Fetch any URL and return a JSON response for parsing.
         """
         response = self.session.get(url, params=params)
         logging.info(f"GET {url} → {response.status_code}")
         response.raise_for_status()
-        return BeautifulSoup(response.text, "html.parser")
+        return response.json()
 
     def fetch_listings_page(self, params: dict = None) -> BeautifulSoup:
         """
@@ -50,9 +52,25 @@ class QrtScraper:
         """
         return self.fetch_page(self.BASE_URL, params)
 
+    def parse_job_type(self, job):
+        for entry in jmes_get("metadata", job, []):
+            if jmes_get("name", entry, "").casefold() == "experience (for job posting)":
+                return jmes_get("value", entry, "")
+        return ""
+
     def run(self):
-        soup = self.fetch_listings_page()
-        # breakpoint()
+        data = self.fetch_listings_page()
+        jobs = data.get("jobs")
+        for job in jobs:
+            url = jmes_get("absolute_url", job, "")
+            if not (job_id := jmes_get("id", job)):
+                logging.warning(
+                    f"Falling back to URL-derived job_id {job_id} for {url}"
+                )
+            title = jmes_get("title", job, "")
+            location = jmes_get("location.name", job, "")
+            job_type = self.parse_job_type(job)
+            # breakpoint()
 
 
 if __name__ == "__main__":
