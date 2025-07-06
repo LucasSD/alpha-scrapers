@@ -4,10 +4,10 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 import requests
-from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from alpha_scrapers.exporters import dump_to_json
 from alpha_scrapers.utils.extraction import jmes_get
 
 logging.basicConfig(
@@ -40,7 +40,7 @@ class QrtScraper:
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
 
-    def fetch_page(self, url: str, params: dict = None) -> BeautifulSoup:
+    def fetch_page(self, url: str, params: dict = None) -> dict:
         """
         Fetch any URL and return a JSON response for parsing.
         """
@@ -49,7 +49,7 @@ class QrtScraper:
         response.raise_for_status()
         return response.json()
 
-    def fetch_listings_page(self, params: dict = None) -> BeautifulSoup:
+    def fetch_listings_page(self, params: dict = None) -> dict:
         """
         Fetch and parse the main listings page.
         """
@@ -95,15 +95,31 @@ class QrtScraper:
         return results
 
 
-if __name__ == "__main__":
+def main():
     scraper = QrtScraper()
     data = scraper.run()
 
     from alpha_scrapers.db import SqlitePersister
 
-    db_path = Path(__file__).parent.parent / "data" / "qrt" / "qrt_jobs.db"
+    project_root = Path(__file__).parent.parent
+    db_path = project_root / "data" / "qrt" / "qrt_jobs.db"
+    now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    archive_dir = project_root / "data" / "qrt" / "archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    archive_path = archive_dir / f"{now}.json"
+    latest_path = project_root / "data" / "qrt" / "latest.json"
+
     persister = SqlitePersister(str(db_path))
     persister.save_jobs(data)
 
-    print(f"✅ Wrote {len(data)} records to DB and JSON:")
-    print(f"   • SQLite DB: {db_path}")
+    dump_to_json(data, str(archive_path))
+    dump_to_json(data, str(latest_path))
+
+    logging.info(f"✅ Wrote {len(data)} records to DB and JSON:")
+    logging.info(f"   • SQLite DB: {db_path}")
+    logging.info(f"   • Archive:   {archive_path}")
+    logging.info(f"   • Latest:    {latest_path}")
+
+
+if __name__ == "__main__":
+    main()
