@@ -5,6 +5,11 @@ import re
 def sanitize_filename(s):
     """
     Sanitize a string to be safe for use as a filename.
+
+    :param s: The input string to sanitize (e.g., a job ID or URL segment).
+    :type s: str
+    :returns: A sanitized string safe for use as a filename (alphanumeric, dash, underscore, dot).
+    :rtype: str
     """
     return re.sub(r'[^\w\-_\.]+', '_', s)
 

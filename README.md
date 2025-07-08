@@ -56,7 +56,7 @@ This creates an isolated virtual environment and installs the following:
 
 ---
 
-## 2. Running the Scraper
+## 2. Running the Scrapers
 
 From the project root, run:
 ```bash
@@ -69,9 +69,11 @@ python -m alpha_scrapers.qrt_scraper
 - **Archive** a timestamped JSON under `data/<target_name>/archive/YYYYMMDDTHHMMSSZ.json`,
 - **Overwrite** `data/<target_name>/latest.json` with the newest snapshot.
 
+After running the scrapers, you will also see a `raw_responses/` directory. This contains timestamped archives of the raw HTML and JSON responses fetched by the scrapers, organized by run and by scraper. These files are useful for debugging and auditing what was fetched from the source sites.
+
 ---
 
-## 🔍 Database Persistence
+## 3. Database Persistence
 - **Table:** `jobs`, automatically created on first run.
 - **Upsert logic:**
   - If a record’s `job_id` is **new**, it’s **inserted** and its `first_seen` and `last_seen` are set to the current timestamp.
@@ -85,7 +87,7 @@ This design ensures you can:
 
 ---
 
-## 📁 JSON Output
+## 4. JSON Output
 
 - **`archive/YYYYMMDDTHHMMSSZ.json`** — immutable snapshot per run
 - **`latest.json`** — overwritten each run, contains the most recent full set
@@ -103,14 +105,14 @@ This design ensures you can:
 
 ---
 
-## 3. Running Tests
+## 5. Running Tests
 
 Execute all tests with:
 ```bash
 pytest
 ```
 
-## 📝 Style & Pre-commit Hooks
+## 6. Style & Pre-commit Hooks
 
 We use:
 
@@ -123,7 +125,22 @@ Run **all** hooks locally:
 pre-commit run --all-files
 ```
 
-## Improvements
+## 7. Exploring the SQLite Database
+
+You can inspect and query the job data stored in the SQLite database using either the command line or a graphical tool:
+
+1. **Using the sqlite3 command line tool:**
+   ```bash
+   sqlite3 data/cisco/cisco_jobs.db
+   sqlite> .tables
+   sqlite> SELECT * FROM jobs LIMIT 5;
+   ```
+   (Replace the path with your desired database, e.g., `data/qrt/qrt_jobs.db`)
+
+2. **Using a modern GUI:**
+   - We recommend [DB Browser for SQLite](https://sqlitebrowser.org/)
+
+## 8. Improvements
 
  - Switch to async (using `aiohttp` or `httpx`) for higher throughput when scraping many pages.
  - find further DRY improvements
