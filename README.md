@@ -23,15 +23,12 @@ Python scrapers for:
 
  **Prerequisites**
 
- - **Python 3.10 or greater**
+ - **Suggested Python version: 3.12.2**
    We recommend using [pyenv](https://github.com/pyenv/pyenv) to install and manage your Python versions.
    ```bash
-   pyenv install 3.xx.x
-   pyenv local 3.xx.x
+   pyenv install 3.12.2
+   pyenv local 3.12.2
    ```
-
- - **Poetry** for dependency & environment management
-   Official guide if needed: [Poetry Documentation](https://python-poetry.org/docs/)
 
 ---
 
@@ -42,25 +39,19 @@ Python scrapers for:
    git clone git@github.com:LucasSD/alpha-scrapers.git
    cd alpha-scrapers
    ```
-2. ```bash
-   pyenv local 3.xx.x
-   poetry env use "$(pyenv which python)"
-   ```
-
-   If you don’t use pyenv, just be sure your python --version is ≥3.10 and that Poetry picks it up. For example, you can explicitly point Poetry at your interpreter:
+2. **Set up a virtual environment** (recommended):
    ```bash
-   # if python3.10 is on your PATH
-   poetry env use python3.10
+   python -m venv .venv
+   source .venv/bin/activate
    ```
-
 3. **Install dependencies**:
    ```bash
-   poetry install
+   pip install -r requirements.txt
    ```
 
 This creates an isolated virtual environment and installs the following:
-- `requests`, `beautifulsoup4` for web scraping
-- `pytest` for running tests
+- `requests`, `beautifulsoup4`, and `jmespath` for web scraping
+- `pytest` for running tests (and `freezegun`)
 - `pre-commit`, `isort`, `flake8`, `black` for code quality checks
 
 ---
@@ -69,8 +60,8 @@ This creates an isolated virtual environment and installs the following:
 
 From the project root, run:
 ```bash
-poetry run python -m alpha_scrapers.cisco_scraper
-poetry run python -m alpha_scrapers.qrt_scraper
+python -m alpha_scrapers.cisco_scraper
+python -m alpha_scrapers.qrt_scraper
 ```
 
 - They will extract each job’s detail,
@@ -116,7 +107,7 @@ This design ensures you can:
 
 Execute all tests with:
 ```bash
-poetry run pytest
+pytest
 ```
 
 ## 📝 Style & Pre-commit Hooks
@@ -131,7 +122,7 @@ We use:
 Run **all** hooks locally:
 
 ```bash
-poetry run pre-commit run --all-files
+pre-commit run --all-files
 ```
 
 ## Improvements
