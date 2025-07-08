@@ -15,7 +15,6 @@ import pytest
 from bs4 import BeautifulSoup
 from freezegun import freeze_time
 
-import alpha_scrapers.cisco_scraper as mod
 from alpha_scrapers.cisco_scraper import CiscoScraper, LinkExtractionError
 
 

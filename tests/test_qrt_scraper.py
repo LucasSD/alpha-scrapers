@@ -13,7 +13,6 @@ Tests cover:
 import pytest
 from freezegun import freeze_time
 
-import alpha_scrapers.qrt_scraper as mod
 from alpha_scrapers.qrt_scraper import QrtScraper
 
 

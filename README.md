@@ -52,7 +52,7 @@ Python scrapers for:
 This creates an isolated virtual environment and installs the following:
 - `requests`, `beautifulsoup4`, and `jmespath` for web scraping
 - `pytest` for running tests (and `freezegun`)
-- `pre-commit`, `isort`, `flake8`, `black` for code quality checks
+- `pre-commit` and `ruff` for code quality checks
 
 ---
 
@@ -114,9 +114,7 @@ pytest
 
 We use:
 
-- **Black** (⎋ formatting)
-- **isort** (import sorting)
-- **flake8** (linting)
+- **ruff** (formatting)
 - **pre-commit** to enforce them on every commit
 
 Run **all** hooks locally:
