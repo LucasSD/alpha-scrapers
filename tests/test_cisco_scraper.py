@@ -13,10 +13,10 @@ Tests cover:
 
 import pytest
 from bs4 import BeautifulSoup
+from freezegun import freeze_time
 
 import alpha_scrapers.cisco_scraper as mod
 from alpha_scrapers.cisco_scraper import CiscoScraper, LinkExtractionError
-from tests.utils import FIXED_TS, DummyDateTime
 
 
 @pytest.fixture(scope="module")
@@ -248,17 +248,6 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
 ################################################################################
 
 
-@pytest.fixture(autouse=True)
-def freeze_datetime(monkeypatch):
-    """
-    Freeze datetime in alpha_scrapers.cisco_scraper to a fixed value for integration tests.
-
-    :param monkeypatch: Built-in pytest fixture for monkeypatching.
-    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
-    """
-    monkeypatch.setattr(mod, "datetime", DummyDateTime)
-
-
 def make_job_soup(job_id, title, location, job_type):
     """
     Create a BeautifulSoup object representing a job detail page with given fields.
@@ -285,6 +274,7 @@ def make_job_soup(job_id, title, location, job_type):
     return BeautifulSoup(html, "html.parser")
 
 
+@freeze_time("2025-07-06T12:00:00+00:00")
 def test_run_produces_expected_records(monkeypatch, scraper):
     """
     Integration test for run(): verifies complete end-to-end job extraction and record structure.
@@ -331,7 +321,7 @@ def test_run_produces_expected_records(monkeypatch, scraper):
             "title": "Title A",
             "location": "Loc A",
             "type": "Type A",
-            "scraped_at": FIXED_TS,
+            "scraped_at": "2025-07-06T12:00:00+00:00",
         },
         {
             "url": "https://jobs.cisco.com/jobs/ProjectDetail/B/2",
@@ -339,10 +329,9 @@ def test_run_produces_expected_records(monkeypatch, scraper):
             "title": "Title B",
             "location": "Loc B",
             "type": "Type B",
-            "scraped_at": FIXED_TS,
+            "scraped_at": "2025-07-06T12:00:00+00:00",
         },
     ]
-
     results_sorted = sorted(results, key=lambda r: r["url"])
     expected_sorted = sorted(expected, key=lambda r: r["url"])
     assert results_sorted == expected_sorted

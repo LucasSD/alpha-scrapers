@@ -11,10 +11,10 @@ Tests cover:
 """
 
 import pytest
+from freezegun import freeze_time
 
 import alpha_scrapers.qrt_scraper as mod
 from alpha_scrapers.qrt_scraper import QrtScraper
-from tests.utils import FIXED_TS, DummyDateTime
 
 
 @pytest.fixture(scope="module")
@@ -160,18 +160,7 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
 ################################################################################
 #                            INTEGRATION TEST: run()
 ################################################################################
-@pytest.fixture(autouse=True)
-def freeze_datetime(monkeypatch):
-    """
-    Monkeypatch datetime in the module so run() uses FIXED_TS for deterministic tests.
-
-    :param monkeypatch: pytest monkeypatch fixture
-    :type monkeypatch: _pytest.monkeypatch.MonkeyPatch
-    """
-    # Monkey-patch datetime in the module so run() uses FIXED_TS
-    monkeypatch.setattr(mod, "datetime", DummyDateTime)
-
-
+@freeze_time("2025-07-06T12:00:00+00:00")
 def test_run_produces_expected_records(monkeypatch, scraper):
     """
     Integration test for run(): verifies complete end-to-end job extraction and record structure.
@@ -202,7 +191,6 @@ def test_run_produces_expected_records(monkeypatch, scraper):
             ),  # missing id -> fallback
         ]
     }
-
     monkeypatch.setattr(
         scraper, "fetch_listings_page", lambda params=None: dummy_listings
     )
@@ -216,7 +204,7 @@ def test_run_produces_expected_records(monkeypatch, scraper):
             "title": "Title A",
             "location": "Loc A",
             "type": "Type A",
-            "scraped_at": FIXED_TS,
+            "scraped_at": "2025-07-06T12:00:00+00:00",
         },
         {
             "url": url_b,
@@ -224,10 +212,9 @@ def test_run_produces_expected_records(monkeypatch, scraper):
             "title": "Title B",
             "location": "Loc B",
             "type": "Type B",
-            "scraped_at": FIXED_TS,
+            "scraped_at": "2025-07-06T12:00:00+00:00",
         },
     ]
-
     results_sorted = sorted(results, key=lambda r: r["url"])
     expected_sorted = sorted(expected, key=lambda r: r["url"])
     assert results_sorted == expected_sorted
