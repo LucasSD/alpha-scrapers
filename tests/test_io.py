@@ -24,50 +24,30 @@ def test_sanitize_filename(input_str, expected):
     assert sanitize_filename(input_str) == expected
 
 
+@pytest.mark.parametrize(
+    "content,filename,timestamp,expected_content,read_method,expected_timestamp",
+    [
+        # Default timestamp (freeze_time)
+        ("hello world", "file.txt", None, "hello world", "read_text", "20240701_123456"),
+        # Explicit timestamp, text
+        ("hello world", "file.txt", "20240101_120000", "hello world", "read_text", "20240101_120000"),
+        # Explicit timestamp, binary
+        (b"\x00\x01\x02", "file.bin", "20240101_120000", b"\x00\x01\x02", "read_bytes", "20240101_120000"),
+    ],
+    ids=["text_default_timestamp", "text_explicit_timestamp", "binary_explicit_timestamp"]
+)
 @freeze_time("2024-07-01 12:34:56")
-def test_save_raw_response_text_default_timestamp(tmp_path, monkeypatch):
+def test_save_raw_response_parametrized(tmp_path, monkeypatch, content, filename, timestamp, expected_content, read_method, expected_timestamp):
     monkeypatch.setattr(io_mod, "Path", lambda *a, **kw: tmp_path.joinpath(*a))
-    content = "hello world"
-    path = save_raw_response(content, "test", "file.txt")
-    assert "20240701_123456" in str(path)
-    assert path.read_text() == content
+    kwargs = {"timestamp": timestamp} if timestamp else {}
+    path = save_raw_response(content, "test", filename, **kwargs)
+    assert expected_timestamp in str(path)
+    assert getattr(path, read_method)() == expected_content
     assert path.exists()
     assert path.is_file()
     assert path.parent.exists()
     assert path.parent.is_dir()
-    assert path.name == "file.txt"
+    assert path.name == filename
     assert "raw_responses" in str(path)
     assert "test" in str(path)
-    assert path.stat().st_size > 0
-
-
-def test_save_raw_response_text_explicit_timestamp(tmp_path, monkeypatch):
-    monkeypatch.setattr(io_mod, "Path", lambda *a, **kw: tmp_path.joinpath(*a))
-    content = "hello world"
-    path = save_raw_response(content, "test", "file.txt", timestamp="20240101_120000")
-    assert "20240101_120000" in str(path)
-    assert path.read_text() == content
-    assert path.exists()
-    assert path.is_file()
-    assert path.parent.exists()
-    assert path.parent.is_dir()
-    assert path.name == "file.txt"
-    assert "raw_responses" in str(path)
-    assert "test" in str(path)
-    assert path.stat().st_size > 0
-
-
-def test_save_raw_response_binary(tmp_path, monkeypatch):
-    monkeypatch.setattr(io_mod, "Path", lambda *a, **kw: tmp_path.joinpath(*a))
-    content = b"\x00\x01\x02"
-    path = save_raw_response(content, "test", "file.bin", timestamp="20240101_120000")
-    assert path.exists()
-    assert path.is_file()
-    assert path.parent.exists()
-    assert path.parent.is_dir()
-    assert path.name == "file.bin"
-    assert "raw_responses" in str(path)
-    assert "test" in str(path)
-    assert "20240101_120000" in str(path)
-    assert path.read_bytes() == content
     assert path.stat().st_size > 0
