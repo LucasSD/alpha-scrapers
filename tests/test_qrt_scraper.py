@@ -9,7 +9,7 @@ Tests cover:
 - HTTP and JSON parsing logic
 - Integration of the full run() pipeline
 """
-
+import json
 import pytest
 from freezegun import freeze_time
 
@@ -125,10 +125,11 @@ def test_fetch_page_makes_http_call_and_parses(monkeypatch, scraper):
         def __init__(self, json_data, status_code=200):
             self._json = json_data
             self.status_code = status_code
-
+        @property
+        def text(self):
+            return json.dumps(self._json)
         def raise_for_status(self):
             calls["raised"] = True
-
         def json(self):
             calls["parsed_json"] = True
             return self._json

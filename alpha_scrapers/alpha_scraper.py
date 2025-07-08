@@ -2,13 +2,14 @@
 AlphaScraper module
 Provides the AlphaScraper class for scraping job boards with built-in retry logic.
 """
-
+from datetime import datetime
 import logging
 from typing import Any, Optional
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from alpha_scrapers.utils.io import save_raw_response
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,6 +45,21 @@ class AlphaScraper:
         adapter = HTTPAdapter(max_retries=retries)
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
+        # Generate a run-wide timestamp for raw response saving
+        self._run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    def save_raw_response(self, content, filename: str):
+        """
+        Save a raw response (HTML, JSON, etc.) to the appropriate timestamped directory for this run.
+
+        :param content: The response content to save (HTML, JSON, etc.), as a string or bytes.
+        :type content: str or bytes
+        :param filename: The filename to use for saving the response (e.g., 'jobs_listing.html').
+        :type filename: str
+        :returns: None
+        :rtype: None
+        """
+        save_raw_response(content, self.__class__.__name__.replace('Scraper','').lower(), filename, timestamp=self._run_timestamp)
 
     def fetch_listings_page(self, params: Optional[dict] = None) -> Any:
         """

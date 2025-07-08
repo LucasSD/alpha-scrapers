@@ -44,6 +44,7 @@ class QrtScraper(AlphaScraper):
         response = self.session.get(url, params=params)
         logging.info(f"GET {url} → {response.status_code}")
         response.raise_for_status()
+        self.save_raw_response(response.text, "jobs_listing.json")
         return response.json()
 
     def parse_job_type(self, job):

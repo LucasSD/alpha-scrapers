@@ -290,10 +290,11 @@ def test_run_produces_expected_records(monkeypatch, scraper):
       <a href="/jobs/ProjectDetail/B/2">B</a>
     </table>
     """
+    main_soup = BeautifulSoup(html_list, "html.parser")
     monkeypatch.setattr(
         scraper,
         "fetch_listings_page",
-        lambda params=None: BeautifulSoup(html_list, "html.parser"),
+        lambda params=None, **kwargs: main_soup,
     )
 
     # per-URL job pages
@@ -306,10 +307,7 @@ def test_run_produces_expected_records(monkeypatch, scraper):
         ),
     }
 
-    def fake_fetch_page(url, params=None):
-        return job_soups[url]
-
-    monkeypatch.setattr(scraper, "fetch_page", fake_fetch_page)
+    monkeypatch.setattr(scraper, "fetch_page", lambda url, params=None, **kwargs: job_soups.get(url, main_soup))
 
     # run and assert
     results = scraper.run()

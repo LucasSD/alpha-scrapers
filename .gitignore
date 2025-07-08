@@ -79,3 +79,5 @@ output/
 outputs/
 *.json
 !example*.json
+
+raw_responses/

@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup, Tag
 
 from alpha_scrapers.alpha_scraper import AlphaScraper
 from alpha_scrapers.exporters import dump_to_json
+from alpha_scrapers.utils.io import sanitize_filename
 
 
 class LinkExtractionError(Exception):
@@ -33,7 +34,7 @@ class CiscoScraper(AlphaScraper):
     def __init__(self):
         super().__init__()
 
-    def fetch_page(self, url: str, params: dict = None) -> BeautifulSoup:
+    def fetch_page(self, url: str, params: dict = None, save_as: str = None) -> BeautifulSoup:
         """
         Fetch any URL and return a BeautifulSoup object for parsing.
 
@@ -48,7 +49,10 @@ class CiscoScraper(AlphaScraper):
         response = self.session.get(url, params=params)
         logging.info(f"GET {url} → {response.status_code}")
         response.raise_for_status()
-        return BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(response.text, "html.parser")
+        if save_as:
+            self.save_raw_response(soup.prettify(), save_as)
+        return soup
 
     def get_job_links(self, soup: BeautifulSoup) -> list[str]:
         """
@@ -126,14 +130,14 @@ class CiscoScraper(AlphaScraper):
                   - scraped_at: ISO-formatted UTC timestamp
         :rtype: list[dict]
         """
-        soup = self.fetch_listings_page()
+        soup = self.fetch_page(self.BASE_URL, save_as="jobs_listing.html")
         job_links = self.get_job_links(soup)
         results = []
         ts = datetime.now(timezone.utc).isoformat()  # timestamp per job
 
         for url in job_links:
             try:
-                job_soup = self.fetch_page(url)
+                job_soup = self.fetch_page(url, save_as=f"job_{sanitize_filename(PurePosixPath(urlparse(url).path).name or url)}.html")
                 job_id = self.parse_field(job_soup, "Job Id")
                 if not job_id:
                     # Extract the job ID (final path segment) cleanly, stripping off any query or fragment
